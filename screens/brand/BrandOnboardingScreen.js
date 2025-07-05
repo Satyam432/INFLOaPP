@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, SafeAreaView, ScrollView, TouchableOpacity, Alert, TextInput } from 'react-native';
+import { View, Text, SafeAreaView, ScrollView, TouchableOpacity, Alert, TextInput, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Button, InputField } from '../../components';
 import { useAuth } from '../../components/AuthProvider';
+import * as ImagePicker from 'expo-image-picker';
 
 export default function BrandOnboardingScreen({ navigation }) {
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     brandName: '',
-    instagramHandle: '',
+    brandInstagram: '',
     logoUrl: ''
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -21,17 +23,45 @@ export default function BrandOnboardingScreen({ navigation }) {
       [key]: value
     }));
   };
+
+  const handleImagePicker = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
+    if (permissionResult.granted === false) {
+      Alert.alert("Permission Required", "Permission to access camera roll is required!");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      updateFormData('logoUrl', result.assets[0].uri);
+    }
+  };
   
   const handleComplete = async () => {
-    if (!formData.name.trim() || !formData.brandName.trim() || !formData.instagramHandle.trim()) {
+    if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.brandName.trim() || !formData.brandInstagram.trim()) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
 
     setIsLoading(true);
     try {
-      console.log('🎯 Completing brand onboarding with:', formData);
-      await completeOnboarding(formData);
+      // Transform data to match expected format
+      const onboardingData = {
+        name: `${formData.firstName} ${formData.lastName}`,
+        brandName: formData.brandName,
+        instagramHandle: formData.brandInstagram,
+        logoUrl: formData.logoUrl
+      };
+      
+      console.log('🎯 Completing brand onboarding with:', onboardingData);
+      await completeOnboarding(onboardingData);
       console.log('✅ Brand onboarding completed successfully');
       
       // Show loading screen for 2 seconds before navigating
@@ -96,20 +126,35 @@ export default function BrandOnboardingScreen({ navigation }) {
         </View>
 
         <View className="mb-8">
-          <View className="mb-4">
-            <Text className="text-sm font-medium text-gray-700 mb-2">Your Name</Text>
-            <View className="border border-gray-300 rounded-lg px-4 py-3">
-              <TextInput
-                value={formData.name}
-                onChangeText={(text) => updateFormData('name', text)}
-                placeholder="John Doe"
-                className="text-base text-gray-900"
-              />
+          {/* First Name and Last Name Row */}
+          <View className="flex-row mb-4">
+            <View className="flex-1 mr-2">
+              <Text className="text-sm font-medium text-gray-700 mb-2">First Name *</Text>
+              <View className="border border-gray-300 rounded-lg px-4 py-3">
+                <TextInput
+                  value={formData.firstName}
+                  onChangeText={(text) => updateFormData('firstName', text)}
+                  placeholder="John"
+                  className="text-base text-gray-900"
+                />
+              </View>
+            </View>
+            <View className="flex-1 ml-2">
+              <Text className="text-sm font-medium text-gray-700 mb-2">Last Name *</Text>
+              <View className="border border-gray-300 rounded-lg px-4 py-3">
+                <TextInput
+                  value={formData.lastName}
+                  onChangeText={(text) => updateFormData('lastName', text)}
+                  placeholder="Doe"
+                  className="text-base text-gray-900"
+                />
+              </View>
             </View>
           </View>
 
+          {/* Brand Name */}
           <View className="mb-4">
-            <Text className="text-sm font-medium text-gray-700 mb-2">Brand Name</Text>
+            <Text className="text-sm font-medium text-gray-700 mb-2">Brand Name *</Text>
             <View className="border border-gray-300 rounded-lg px-4 py-3">
               <TextInput
                 value={formData.brandName}
@@ -120,28 +165,47 @@ export default function BrandOnboardingScreen({ navigation }) {
             </View>
           </View>
 
+          {/* Brand Instagram */}
           <View className="mb-4">
-            <Text className="text-sm font-medium text-gray-700 mb-2">Instagram Handle</Text>
+            <Text className="text-sm font-medium text-gray-700 mb-2">Brand Instagram *</Text>
             <View className="border border-gray-300 rounded-lg px-4 py-3">
               <TextInput
-                value={formData.instagramHandle}
-                onChangeText={(text) => updateFormData('instagramHandle', text)}
+                value={formData.brandInstagram}
+                onChangeText={(text) => updateFormData('brandInstagram', text)}
                 placeholder="@yourbrand"
                 className="text-base text-gray-900"
               />
             </View>
           </View>
 
+          {/* Upload Logo */}
           <View className="mb-4">
-            <Text className="text-sm font-medium text-gray-700 mb-2">Logo URL (Optional)</Text>
-            <View className="border border-gray-300 rounded-lg px-4 py-3">
-              <TextInput
-                value={formData.logoUrl}
-                onChangeText={(text) => updateFormData('logoUrl', text)}
-                placeholder="https://yourlogo.com/logo.png"
-                className="text-base text-gray-900"
-              />
-            </View>
+            <Text className="text-sm font-medium text-gray-700 mb-2">Upload Logo</Text>
+            <TouchableOpacity
+              onPress={handleImagePicker}
+              className="border border-gray-300 rounded-lg px-4 py-3 bg-gray-50"
+            >
+              <View className="flex-row items-center">
+                {formData.logoUrl ? (
+                  <View className="flex-row items-center">
+                    <Image 
+                      source={{ uri: formData.logoUrl }} 
+                      className="w-12 h-12 rounded-lg mr-3"
+                      style={{ width: 48, height: 48 }}
+                    />
+                    <View className="flex-1">
+                      <Text className="text-base text-gray-900">Logo selected</Text>
+                      <Text className="text-sm text-gray-600">Tap to change</Text>
+                    </View>
+                  </View>
+                ) : (
+                  <View className="flex-row items-center">
+                    <Ionicons name="cloud-upload-outline" size={24} color="#6B7280" />
+                    <Text className="text-base text-gray-600 ml-3">Choose file to upload</Text>
+                  </View>
+                )}
+              </View>
+            </TouchableOpacity>
           </View>
         </View>
         

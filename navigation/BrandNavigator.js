@@ -6,11 +6,16 @@ import { Colors, Routes } from '../constants';
 import { useAuth } from '../components/AuthProvider';
 
 // Brand Screens
+import BrandHomeScreen from '../screens/brand/BrandHomeScreen';
 import BrandCampaignsScreen from '../screens/brand/BrandCampaignsScreen';
 import BrandCreatorDiscoveryScreen from '../screens/brand/BrandCreatorDiscoveryScreen';
 import BrandProfileScreen from '../screens/brand/BrandProfileScreen';
 import BrandOnboardingScreen from '../screens/brand/BrandOnboardingScreen';
 import BrandCreateCampaignScreen from '../screens/brand/BrandCreateCampaignScreen';
+import BrandConnectInstagramScreen from '../screens/brand/BrandConnectInstagramScreen';
+import BrandApproveCreatorsScreen from '../screens/brand/BrandApproveCreatorsScreen';
+import BrandViewCreatorDetailsScreen from '../screens/brand/BrandViewCreatorDetailsScreen';
+import BrandApproveContentScreen from '../screens/brand/BrandApproveContentScreen';
 import ChatDetailScreen from '../screens/common/ChatDetailScreen';
 
 const Tab = createBottomTabNavigator();
@@ -25,6 +30,9 @@ function BrandTabNavigator() {
           let iconName;
 
           switch (route.name) {
+            case Routes.TABS.BRAND.HOME:
+              iconName = focused ? 'home' : 'home-outline';
+              break;
             case Routes.TABS.BRAND.CAMPAIGNS:
               iconName = focused ? 'megaphone' : 'megaphone-outline';
               break;
@@ -35,7 +43,7 @@ function BrandTabNavigator() {
               iconName = focused ? 'business' : 'business-outline';
               break;
             default:
-              iconName = 'megaphone-outline';
+              iconName = 'home-outline';
           }
 
           return <Ionicons name={iconName} size={size} color={color} />;
@@ -52,6 +60,11 @@ function BrandTabNavigator() {
         headerShown: false,
       })}
     >
+      <Tab.Screen 
+        name={Routes.TABS.BRAND.HOME} 
+        component={BrandHomeScreen}
+        options={{ title: 'Home' }}
+      />
       <Tab.Screen 
         name={Routes.TABS.BRAND.CAMPAIGNS} 
         component={BrandCampaignsScreen}
@@ -108,6 +121,38 @@ export default function BrandNavigator() {
             component={BrandCreateCampaignScreen}
             options={{ 
               title: 'Create Campaign',
+              headerBackTitleVisible: false,
+            }}
+          />
+          <Stack.Screen
+            name={Routes.BRAND_CONNECT_INSTAGRAM}
+            component={BrandConnectInstagramScreen}
+            options={{ 
+              title: 'Connect Instagram',
+              headerBackTitleVisible: false,
+            }}
+          />
+          <Stack.Screen
+            name={Routes.BRAND_APPROVE_CREATORS}
+            component={BrandApproveCreatorsScreen}
+            options={{ 
+              title: 'Approve Creators',
+              headerBackTitleVisible: false,
+            }}
+          />
+          <Stack.Screen
+            name={Routes.BRAND_VIEW_CREATOR_DETAILS}
+            component={BrandViewCreatorDetailsScreen}
+            options={{ 
+              title: 'Creator Details',
+              headerBackTitleVisible: false,
+            }}
+          />
+          <Stack.Screen
+            name={Routes.BRAND_APPROVE_CONTENT}
+            component={BrandApproveContentScreen}
+            options={{ 
+              title: 'Approve Content',
               headerBackTitleVisible: false,
             }}
           />

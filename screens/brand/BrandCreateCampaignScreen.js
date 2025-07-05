@@ -13,7 +13,6 @@ import { Button, InputField, Card } from '../../components';
 import { useAuthStore } from '../../state';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants';
-import { validateRequired, validateNumber, validateMinLength } from '../../utils/validators';
 
 export default function BrandCreateCampaignScreen({ navigation }) {
   const { user } = useAuthStore();
@@ -22,57 +21,67 @@ export default function BrandCreateCampaignScreen({ navigation }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   
-  // Step 1: Product Details
-  const [productTitle, setProductTitle] = useState('');
-  const [brandName, setBrandName] = useState(user?.name || '');
-  const [niche, setNiche] = useState('');
-  const [productDescription, setProductDescription] = useState('');
+  // Step 1: Campaign Details - Name, followers, formats, categories
+  const [campaignName, setCampaignName] = useState('');
+  const [minFollowers, setMinFollowers] = useState('');
+  const [maxFollowers, setMaxFollowers] = useState('');
+  const [selectedFormats, setSelectedFormats] = useState([]);
+  const [selectedCategories, setSelectedCategories] = useState([]);
   
-  // Step 2: Campaign Brief, Deliverables, Budget
-  const [campaignBrief, setCampaignBrief] = useState('');
-  const [deliverables, setDeliverables] = useState([]);
-  const [budget, setBudget] = useState('');
-  const [timeline, setTimeline] = useState('');
+  // Step 2: Compensation Details - Barter value, discounts, affiliate %
+  const [barterValue, setBarterValue] = useState('');
+  const [discountPercentage, setDiscountPercentage] = useState('');
+  const [affiliatePercentage, setAffiliatePercentage] = useState('');
+  const [compensationType, setCompensationType] = useState('');
   
-  // Step 3: Additional Requirements
-  const [targetAudience, setTargetAudience] = useState('');
+  // Step 3: Timeline & Requirements - Visibility date, delivery time, revision count
+  const [visibilityDate, setVisibilityDate] = useState('');
+  const [deliveryTime, setDeliveryTime] = useState('');
+  const [revisionCount, setRevisionCount] = useState('');
   const [additionalRequirements, setAdditionalRequirements] = useState('');
-  const [campaignType, setCampaignType] = useState('');
   
   // UI state
   const [errors, setErrors] = useState({});
 
-  // Deliverable options
-  const deliverableOptions = [
-    { id: 'posts', name: 'Social Media Posts', icon: 'images-outline' },
+  // Content format options
+  const formatOptions = [
+    { id: 'posts', name: 'Instagram Posts', icon: 'images-outline' },
     { id: 'stories', name: 'Instagram Stories', icon: 'camera-outline' },
-    { id: 'reels', name: 'Reels/TikToks', icon: 'videocam-outline' },
+    { id: 'reels', name: 'Reels', icon: 'videocam-outline' },
+    { id: 'tiktok', name: 'TikTok', icon: 'musical-notes-outline' },
+    { id: 'youtube', name: 'YouTube', icon: 'logo-youtube' },
     { id: 'blog', name: 'Blog Posts', icon: 'document-text-outline' },
-    { id: 'reviews', name: 'Product Reviews', icon: 'star-outline' },
-    { id: 'unboxing', name: 'Unboxing Videos', icon: 'cube-outline' },
   ];
 
-  // Campaign type options
-  const campaignTypes = [
-    { id: 'product_launch', name: 'Product Launch', icon: 'rocket-outline' },
-    { id: 'brand_awareness', name: 'Brand Awareness', icon: 'megaphone-outline' },
-    { id: 'content_creation', name: 'Content Creation', icon: 'camera-outline' },
-    { id: 'event_promotion', name: 'Event Promotion', icon: 'calendar-outline' },
+  // Category options
+  const categoryOptions = [
+    { id: 'fashion', name: 'Fashion', icon: 'shirt-outline' },
+    { id: 'beauty', name: 'Beauty', icon: 'rose-outline' },
+    { id: 'lifestyle', name: 'Lifestyle', icon: 'cafe-outline' },
+    { id: 'fitness', name: 'Fitness', icon: 'fitness-outline' },
+    { id: 'tech', name: 'Technology', icon: 'phone-portrait-outline' },
+    { id: 'food', name: 'Food & Drink', icon: 'restaurant-outline' },
+    { id: 'travel', name: 'Travel', icon: 'airplane-outline' },
+    { id: 'entertainment', name: 'Entertainment', icon: 'game-controller-outline' },
+  ];
+
+  // Compensation types
+  const compensationTypes = [
+    { id: 'paid', name: 'Paid Campaign', icon: 'card-outline' },
+    { id: 'barter', name: 'Barter Only', icon: 'swap-horizontal-outline' },
+    { id: 'affiliate', name: 'Affiliate Only', icon: 'link-outline' },
+    { id: 'hybrid', name: 'Hybrid (Paid + Barter)', icon: 'duplicate-outline' },
   ];
 
   const handleNextStep = () => {
     if (currentStep === 1) {
-      if (!productTitle.trim() || !brandName.trim() || !niche.trim() || !productDescription.trim()) {
-        Alert.alert('Error', 'Please fill in all product details');
+      if (!campaignName.trim() || !minFollowers.trim() || selectedFormats.length === 0 || selectedCategories.length === 0) {
+        Alert.alert('Error', 'Please fill in all required fields');
         return;
       }
     } else if (currentStep === 2) {
-      if (!campaignBrief.trim() || deliverables.length === 0 || !budget.trim() || !timeline.trim()) {
-        Alert.alert('Error', 'Please fill in campaign brief, select deliverables, and set budget & timeline');
-        return;
-      }
-      if (parseFloat(budget) < 100) {
-        Alert.alert('Error', 'Budget must be at least $100');
+      if (!compensationType || (!barterValue.trim() && !discountPercentage.trim() && !affiliatePercentage.trim())) {
+        Alert.alert('Error', 'Please select compensation type and fill in compensation details');
         return;
       }
     }
@@ -84,42 +93,53 @@ export default function BrandCreateCampaignScreen({ navigation }) {
     setCurrentStep(currentStep - 1);
   };
 
-  const toggleDeliverable = (deliverableId) => {
-    setDeliverables(prev => 
-      prev.includes(deliverableId) 
-        ? prev.filter(id => id !== deliverableId)
-        : [...prev, deliverableId]
+  const toggleFormat = (formatId) => {
+    setSelectedFormats(prev => 
+      prev.includes(formatId) 
+        ? prev.filter(id => id !== formatId)
+        : [...prev, formatId]
+    );
+  };
+
+  const toggleCategory = (categoryId) => {
+    setSelectedCategories(prev => 
+      prev.includes(categoryId) 
+        ? prev.filter(id => id !== categoryId)
+        : [...prev, categoryId]
     );
   };
 
   const handleSubmit = async () => {
-    if (!targetAudience.trim() || !campaignType) {
-      Alert.alert('Error', 'Please fill in target audience and select campaign type');
+    if (!visibilityDate.trim() || !deliveryTime.trim() || !revisionCount.trim()) {
+      Alert.alert('Error', 'Please fill in all timeline and requirements fields');
       return;
     }
 
     setIsLoading(true);
 
-    // Prepare comprehensive campaign data
+    // Prepare campaign data
     const campaignData = {
-      // Step 1: Product Details
-      productTitle,
-      brandName,
-      niche,
-      productDescription,
-      
-      // Step 2: Campaign Brief & Deliverables
-      campaignBrief,
-      deliverables: deliverables.map(id => 
-        deliverableOptions.find(opt => opt.id === id)?.name
+      // Step 1: Campaign Details
+      campaignName,
+      followerRange: { min: parseInt(minFollowers), max: parseInt(maxFollowers) },
+      formats: selectedFormats.map(id => 
+        formatOptions.find(opt => opt.id === id)?.name
       ),
-      budget: parseFloat(budget),
-      timeline,
+      categories: selectedCategories.map(id => 
+        categoryOptions.find(opt => opt.id === id)?.name
+      ),
       
-      // Step 3: Additional Requirements
-      targetAudience,
+      // Step 2: Compensation Details
+      compensationType,
+      barterValue: parseFloat(barterValue) || 0,
+      discountPercentage: parseFloat(discountPercentage) || 0,
+      affiliatePercentage: parseFloat(affiliatePercentage) || 0,
+      
+      // Step 3: Timeline & Requirements
+      visibilityDate,
+      deliveryTime,
+      revisionCount: parseInt(revisionCount),
       additionalRequirements,
-      campaignType,
       
       // Meta data
       brandId: user?.userId,
@@ -128,36 +148,27 @@ export default function BrandCreateCampaignScreen({ navigation }) {
       id: `cmp_${Date.now()}`,
     };
 
-    console.log('🚀 Creating Comprehensive Campaign:');
-    console.log('====================================');
-    console.log('Campaign ID:', campaignData.id);
-    console.log('');
-    console.log('📦 PRODUCT DETAILS:');
-    console.log('Product Title:', campaignData.productTitle);
-    console.log('Brand Name:', campaignData.brandName);
-    console.log('Niche:', campaignData.niche);
-    console.log('Product Description:', campaignData.productDescription);
-    console.log('');
-    console.log('📋 CAMPAIGN BRIEF:');
-    console.log('Campaign Brief:', campaignData.campaignBrief);
-    console.log('Deliverables:', campaignData.deliverables.join(', '));
-    console.log('Budget: $', campaignData.budget.toLocaleString());
-    console.log('Timeline:', campaignData.timeline);
-    console.log('');
-    console.log('🎯 ADDITIONAL REQUIREMENTS:');
-    console.log('Campaign Type:', campaignData.campaignType);
-    console.log('Target Audience:', campaignData.targetAudience);
-    console.log('Additional Requirements:', campaignData.additionalRequirements || 'None specified');
-    console.log('');
-    console.log('Created At:', campaignData.createdAt);
-    console.log('====================================');
+    console.log('🚀 Creating Campaign:');
+    console.log('==================');
+    console.log('Campaign Name:', campaignData.campaignName);
+    console.log('Follower Range:', `${campaignData.followerRange.min}K - ${campaignData.followerRange.max}K`);
+    console.log('Formats:', campaignData.formats.join(', '));
+    console.log('Categories:', campaignData.categories.join(', '));
+    console.log('Compensation Type:', campaignData.compensationType);
+    console.log('Barter Value: $', campaignData.barterValue);
+    console.log('Discount %:', campaignData.discountPercentage);
+    console.log('Affiliate %:', campaignData.affiliatePercentage);
+    console.log('Visibility Date:', campaignData.visibilityDate);
+    console.log('Delivery Time:', campaignData.deliveryTime);
+    console.log('Revision Count:', campaignData.revisionCount);
+    console.log('==================');
 
     try {
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       Alert.alert(
         'Campaign Created Successfully!',
-        `"${campaignData.productTitle}" campaign has been created. Check the console for full details.`,
+        `"${campaignData.campaignName}" campaign has been created and is ready for creator applications.`,
         [
           {
             text: 'View Campaigns',
@@ -168,17 +179,19 @@ export default function BrandCreateCampaignScreen({ navigation }) {
             onPress: () => {
               // Reset all form data
               setCurrentStep(1);
-              setProductTitle('');
-              setBrandName(user?.name || '');
-              setNiche('');
-              setProductDescription('');
-              setCampaignBrief('');
-              setDeliverables([]);
-              setBudget('');
-              setTimeline('');
-              setTargetAudience('');
+              setCampaignName('');
+              setMinFollowers('');
+              setMaxFollowers('');
+              setSelectedFormats([]);
+              setSelectedCategories([]);
+              setBarterValue('');
+              setDiscountPercentage('');
+              setAffiliatePercentage('');
+              setCompensationType('');
+              setVisibilityDate('');
+              setDeliveryTime('');
+              setRevisionCount('');
               setAdditionalRequirements('');
-              setCampaignType('');
               setErrors({});
             }
           }
@@ -217,45 +230,103 @@ export default function BrandCreateCampaignScreen({ navigation }) {
 
   const renderStep1 = () => (
     <View>
-      <Text className="text-2xl font-bold text-gray-900 mb-2 text-center">Product Details</Text>
+      <Text className="text-2xl font-bold text-gray-900 mb-2 text-center">Campaign Details</Text>
       <Text className="text-gray-600 text-center mb-8">
-        Tell us about your product or service
+        Name, followers, formats, and categories
       </Text>
       
       <InputField
-        label="Product/Service Title *"
-        placeholder="e.g., Eco-Friendly Water Bottle"
-        value={productTitle}
-        onChangeText={setProductTitle}
+        label="Campaign Name *"
+        placeholder="e.g., Summer Collection Launch"
+        value={campaignName}
+        onChangeText={setCampaignName}
       />
       
-      <InputField
-        label="Brand Name *"
-        placeholder="Your brand name"
-        value={brandName}
-        onChangeText={setBrandName}
-      />
+      <View className="flex-row space-x-3 mb-4">
+        <InputField
+          label="Min Followers (K) *"
+          placeholder="10"
+          value={minFollowers}
+          onChangeText={setMinFollowers}
+          keyboardType="numeric"
+          style={{ flex: 1 }}
+        />
+        <InputField
+          label="Max Followers (K)"
+          placeholder="100"
+          value={maxFollowers}
+          onChangeText={setMaxFollowers}
+          keyboardType="numeric"
+          style={{ flex: 1 }}
+        />
+      </View>
       
-      <InputField
-        label="Niche *"
-        placeholder="e.g., Health & Wellness, Tech, Fashion"
-        value={niche}
-        onChangeText={setNiche}
-      />
-      
-      <InputField
-        label="Product Description *"
-        placeholder="Describe your product, its key features, and benefits..."
-        value={productDescription}
-        onChangeText={setProductDescription}
-        multiline
-        numberOfLines={4}
-      />
+      {/* Content Formats */}
+      <View className="mb-6">
+        <Text className="text-sm font-medium text-gray-700 mb-3">Content Formats *</Text>
+        <View className="flex-row flex-wrap gap-3">
+          {formatOptions.map((format) => (
+            <TouchableOpacity
+              key={format.id}
+              onPress={() => toggleFormat(format.id)}
+              className={`flex-1 min-w-[45%] p-4 rounded-lg border-2 ${
+                selectedFormats.includes(format.id)
+                  ? 'border-primary bg-primary/5'
+                  : 'border-gray-200 bg-gray-50'
+              }`}
+            >
+              <View className="items-center">
+                <Ionicons 
+                  name={format.icon} 
+                  size={24} 
+                  color={selectedFormats.includes(format.id) ? Colors.primary : Colors.gray500} 
+                />
+                <Text className={`text-sm font-medium mt-2 text-center ${
+                  selectedFormats.includes(format.id) ? 'text-primary' : 'text-gray-700'
+                }`}>
+                  {format.name}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      {/* Categories */}
+      <View className="mb-6">
+        <Text className="text-sm font-medium text-gray-700 mb-3">Categories *</Text>
+        <View className="flex-row flex-wrap gap-3">
+          {categoryOptions.map((category) => (
+            <TouchableOpacity
+              key={category.id}
+              onPress={() => toggleCategory(category.id)}
+              className={`flex-1 min-w-[45%] p-4 rounded-lg border-2 ${
+                selectedCategories.includes(category.id)
+                  ? 'border-primary bg-primary/5'
+                  : 'border-gray-200 bg-gray-50'
+              }`}
+            >
+              <View className="items-center">
+                <Ionicons 
+                  name={category.icon} 
+                  size={24} 
+                  color={selectedCategories.includes(category.id) ? Colors.primary : Colors.gray500} 
+                />
+                <Text className={`text-sm font-medium mt-2 text-center ${
+                  selectedCategories.includes(category.id) ? 'text-primary' : 'text-gray-700'
+                }`}>
+                  {category.name}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
       
       <Button
         title="Next"
         onPress={handleNextStep}
-        disabled={!productTitle.trim() || !brandName.trim() || !niche.trim() || !productDescription.trim()}
+        disabled={!campaignName.trim() || !minFollowers.trim() || selectedFormats.length === 0 || selectedCategories.length === 0}
         size="large"
         style={{ marginTop: 20 }}
       />
@@ -264,44 +335,35 @@ export default function BrandCreateCampaignScreen({ navigation }) {
 
   const renderStep2 = () => (
     <View>
-      <Text className="text-2xl font-bold text-gray-900 mb-2 text-center">Campaign Brief</Text>
+      <Text className="text-2xl font-bold text-gray-900 mb-2 text-center">Compensation Details</Text>
       <Text className="text-gray-600 text-center mb-8">
-        Define your campaign objectives and deliverables
+        Barter value, discounts, and affiliate percentage
       </Text>
       
-      <InputField
-        label="Campaign Brief *"
-        placeholder="Describe your campaign goals, key messages, and what you want to achieve..."
-        value={campaignBrief}
-        onChangeText={setCampaignBrief}
-        multiline
-        numberOfLines={4}
-      />
-      
-      {/* Deliverables Selection */}
+      {/* Compensation Type */}
       <View className="mb-6">
-        <Text className="text-sm font-medium text-gray-700 mb-3">Select Deliverables *</Text>
+        <Text className="text-sm font-medium text-gray-700 mb-3">Compensation Type *</Text>
         <View className="flex-row flex-wrap gap-3">
-          {deliverableOptions.map((option) => (
+          {compensationTypes.map((type) => (
             <TouchableOpacity
-              key={option.id}
-              onPress={() => toggleDeliverable(option.id)}
+              key={type.id}
+              onPress={() => setCompensationType(type.id)}
               className={`flex-1 min-w-[45%] p-4 rounded-lg border-2 ${
-                deliverables.includes(option.id)
+                compensationType === type.id
                   ? 'border-primary bg-primary/5'
                   : 'border-gray-200 bg-gray-50'
               }`}
             >
               <View className="items-center">
                 <Ionicons 
-                  name={option.icon} 
+                  name={type.icon} 
                   size={24} 
-                  color={deliverables.includes(option.id) ? Colors.primary : Colors.gray500} 
+                  color={compensationType === type.id ? Colors.primary : Colors.gray500} 
                 />
                 <Text className={`text-sm font-medium mt-2 text-center ${
-                  deliverables.includes(option.id) ? 'text-primary' : 'text-gray-700'
+                  compensationType === type.id ? 'text-primary' : 'text-gray-700'
                 }`}>
-                  {option.name}
+                  {type.name}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -310,19 +372,30 @@ export default function BrandCreateCampaignScreen({ navigation }) {
       </View>
       
       <InputField
-        label="Budget (USD) *"
-        placeholder="1000"
-        value={budget}
-        onChangeText={setBudget}
+        label="Barter Value (USD)"
+        placeholder="500"
+        value={barterValue}
+        onChangeText={setBarterValue}
         keyboardType="numeric"
         leftIcon="card"
       />
       
       <InputField
-        label="Timeline *"
-        placeholder="e.g., 2 weeks, 1 month"
-        value={timeline}
-        onChangeText={setTimeline}
+        label="Discount Percentage (%)"
+        placeholder="20"
+        value={discountPercentage}
+        onChangeText={setDiscountPercentage}
+        keyboardType="numeric"
+        leftIcon="percent"
+      />
+      
+      <InputField
+        label="Affiliate Percentage (%)"
+        placeholder="10"
+        value={affiliatePercentage}
+        onChangeText={setAffiliatePercentage}
+        keyboardType="numeric"
+        leftIcon="trending-up"
       />
       
       <View className="flex-row space-x-3 mt-6">
@@ -336,7 +409,7 @@ export default function BrandCreateCampaignScreen({ navigation }) {
         <Button
           title="Next"
           onPress={handleNextStep}
-          disabled={!campaignBrief.trim() || deliverables.length === 0 || !budget.trim() || !timeline.trim()}
+          disabled={!compensationType}
           size="large"
           style={{ flex: 1 }}
         />
@@ -346,50 +419,35 @@ export default function BrandCreateCampaignScreen({ navigation }) {
 
   const renderStep3 = () => (
     <View>
-      <Text className="text-2xl font-bold text-gray-900 mb-2 text-center">Additional Requirements</Text>
+      <Text className="text-2xl font-bold text-gray-900 mb-2 text-center">Timeline & Requirements</Text>
       <Text className="text-gray-600 text-center mb-8">
-        Specify your target audience and any additional requirements
+        Visibility date, delivery time, and revision count
       </Text>
       
       <InputField
-        label="Target Audience *"
-        placeholder="e.g., Women aged 25-35, interested in fitness and wellness"
-        value={targetAudience}
-        onChangeText={setTargetAudience}
-        multiline
-        numberOfLines={3}
+        label="Visibility Date *"
+        placeholder="e.g., March 15, 2024"
+        value={visibilityDate}
+        onChangeText={setVisibilityDate}
+        leftIcon="calendar"
       />
       
-      {/* Campaign Type Selection */}
-      <View className="mb-6">
-        <Text className="text-sm font-medium text-gray-700 mb-3">Campaign Type *</Text>
-        <View className="flex-row flex-wrap gap-3">
-          {campaignTypes.map((type) => (
-            <TouchableOpacity
-              key={type.id}
-              onPress={() => setCampaignType(type.id)}
-              className={`flex-1 min-w-[45%] p-4 rounded-lg border-2 ${
-                campaignType === type.id
-                  ? 'border-primary bg-primary/5'
-                  : 'border-gray-200 bg-gray-50'
-              }`}
-            >
-              <View className="items-center">
-                <Ionicons 
-                  name={type.icon} 
-                  size={24} 
-                  color={campaignType === type.id ? Colors.primary : Colors.gray500} 
-                />
-                <Text className={`text-sm font-medium mt-2 text-center ${
-                  campaignType === type.id ? 'text-primary' : 'text-gray-700'
-                }`}>
-                  {type.name}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
+      <InputField
+        label="Delivery Time *"
+        placeholder="e.g., 7 days, 2 weeks"
+        value={deliveryTime}
+        onChangeText={setDeliveryTime}
+        leftIcon="time"
+      />
+      
+      <InputField
+        label="Revision Count *"
+        placeholder="3"
+        value={revisionCount}
+        onChangeText={setRevisionCount}
+        keyboardType="numeric"
+        leftIcon="refresh"
+      />
       
       <InputField
         label="Additional Requirements"
@@ -412,7 +470,7 @@ export default function BrandCreateCampaignScreen({ navigation }) {
           title="Create Campaign"
           onPress={handleSubmit}
           loading={isLoading}
-          disabled={!targetAudience.trim() || !campaignType}
+          disabled={!visibilityDate.trim() || !deliveryTime.trim() || !revisionCount.trim()}
           size="large"
           style={{ flex: 1 }}
         />

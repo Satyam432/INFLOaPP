@@ -19,6 +19,7 @@ export const Routes = {
   // Brand routes
   BRAND_TAB: 'BrandTab',
   BRAND_ONBOARDING: 'BrandOnboarding',
+  BRAND_HOME: 'BrandHome',
   BRAND_CAMPAIGNS: 'BrandCampaigns',
   BRAND_CREATE_CAMPAIGN: 'BrandCreateCampaign',
   BRAND_CREATOR_DISCOVERY: 'BrandCreatorDiscovery',
@@ -27,6 +28,10 @@ export const Routes = {
   BRAND_CHAT: 'BrandChat',
   BRAND_PROFILE: 'BrandProfile',
   BRAND_SETTINGS: 'BrandSettings',
+  BRAND_CONNECT_INSTAGRAM: 'BrandConnectInstagram',
+  BRAND_APPROVE_CREATORS: 'BrandApproveCreators',
+  BRAND_VIEW_CREATOR_DETAILS: 'BrandViewCreatorDetails',
+  BRAND_APPROVE_CONTENT: 'BrandApproveContent',
   
   // Shared routes
   CHAT_DETAIL: 'ChatDetail',
@@ -42,6 +47,7 @@ export const Routes = {
       PROFILE: 'Profile',
     },
     BRAND: {
+      HOME: 'Home',
       CAMPAIGNS: 'Campaigns',
       CREATORS: 'Creators',
       PROFILE: 'Profile',
