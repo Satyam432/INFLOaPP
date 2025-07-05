@@ -10,6 +10,7 @@ export const Routes = {
   CREATOR_ONBOARDING: 'CreatorOnboarding',
   CREATOR_PORTFOLIO: 'CreatorPortfolio',
   CREATOR_VIEW_OFFERS: 'CreatorViewOffers',
+  CREATOR_CAMPAIGNS: 'CreatorCampaigns',
   CREATOR_CHAT: 'CreatorChat',
   CREATOR_EARNINGS: 'CreatorEarnings',
   CREATOR_PROFILE: 'CreatorProfile',
@@ -22,6 +23,7 @@ export const Routes = {
   BRAND_CREATE_CAMPAIGN: 'BrandCreateCampaign',
   BRAND_CREATOR_DISCOVERY: 'BrandCreatorDiscovery',
   BRAND_OFFER_MANAGEMENT: 'BrandOfferManagement',
+  BRAND_CREATORS: 'BrandCreators',
   BRAND_CHAT: 'BrandChat',
   BRAND_PROFILE: 'BrandProfile',
   BRAND_SETTINGS: 'BrandSettings',
@@ -32,20 +34,16 @@ export const Routes = {
   CREATOR_DETAIL: 'CreatorDetail',
   OFFER_DETAIL: 'OfferDetail',
   
-  // Tab names
+  // Tab names - Updated to match Figma design
   TABS: {
     CREATOR: {
       HOME: 'Home',
-      PORTFOLIO: 'Portfolio',
-      OFFERS: 'Offers',
-      CHAT: 'Chat',
+      CAMPAIGNS: 'Campaigns',
       PROFILE: 'Profile',
     },
     BRAND: {
-      HOME: 'Home',
       CAMPAIGNS: 'Campaigns',
-      DISCOVER: 'Discover',
-      CHAT: 'Chat',
+      CREATORS: 'Creators',
       PROFILE: 'Profile',
     }
   }

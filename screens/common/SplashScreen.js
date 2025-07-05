@@ -1,18 +1,13 @@
 import React, { useEffect } from 'react';
-import { View, Text, Image } from 'react-native';
-import { useAuthStore } from '../../state';
-import { LoadingSpinner } from '../../components';
-import { Colors } from '../../constants';
+import { View, Text } from 'react-native';
+import { useAuth } from '../../components/AuthProvider';
 
 export default function SplashScreen({ navigation }) {
-  const { loadStoredAuth, isLoading, isAuthenticated, role } = useAuthStore();
+  const { isAuthenticated, role } = useAuth();
 
   useEffect(() => {
-    initializeApp();
-  }, []);
-
-  useEffect(() => {
-    if (!isLoading) {
+    // Show splash for 3 seconds then navigate appropriately
+    const timer = setTimeout(() => {
       if (isAuthenticated && role) {
         // Navigate to appropriate navigator based on role
         if (role === 'creator') {
@@ -21,42 +16,27 @@ export default function SplashScreen({ navigation }) {
           navigation.replace('BrandNavigator');
         }
       } else {
-        // Navigate to login
-        navigation.replace('Login');
+        // Navigate to role selection screen
+        navigation.replace('RoleSelection');
       }
-    }
-  }, [isLoading, isAuthenticated, role]);
+    }, 3000); // 3 second splash
 
-  const initializeApp = async () => {
-    // Load stored authentication data
-    await loadStoredAuth();
-    
-    // Add any other app initialization logic here
-    // e.g., loading app configuration, checking for updates, etc.
-  };
+    return () => clearTimeout(timer);
+  }, [isAuthenticated, role, navigation]);
 
   return (
-    <View className="flex-1 justify-center items-center bg-white">
-      {/* App Logo */}
-      <View className="items-center mb-8">
-        <View className="w-24 h-24 bg-primary rounded-full justify-center items-center mb-4">
-          <Text className="text-white text-3xl font-bold">I</Text>
-        </View>
-        <Text className="text-4xl font-bold text-gray-900">Inflo</Text>
-        <Text className="text-lg text-gray-600 mt-2">Creator-Brand Collaboration</Text>
-      </View>
-
-      {/* Loading Spinner */}
-      <LoadingSpinner 
-        text="Loading..." 
-        color={Colors.primary}
-        size="large"
-      />
-
-      {/* Version Info */}
-      <View className="absolute bottom-10 items-center">
-        <Text className="text-gray-400 text-sm">Version 1.0.0</Text>
-      </View>
+    <View style={{ flex: 1, backgroundColor: '#FF6B7A' }} className="justify-center items-center">
+      {/* Inflo Logo in white */}
+      <Text 
+        style={{ 
+          fontSize: 48, 
+          fontWeight: 'bold', 
+          color: 'white',
+          fontFamily: 'cursive' // This will use the system's cursive font
+        }}
+      >
+        Inflo
+      </Text>
     </View>
   );
 } 

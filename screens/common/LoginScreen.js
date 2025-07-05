@@ -1,108 +1,187 @@
 import React, { useState } from 'react';
-import { View, Text, SafeAreaView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
-import { Button, InputField } from '../../components';
+import { View, Text, SafeAreaView, TouchableOpacity, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { authService } from '../../services';
-import { Colors } from '../../constants';
 
-export default function LoginScreen({ navigation }) {
-  const [identifier, setIdentifier] = useState('');
+export default function LoginScreen({ route, navigation }) {
+  const { preSelectedRole } = route.params || {};
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState({});
 
-  const validateInput = () => {
-    const newErrors = {};
-    
-    if (!identifier.trim()) {
-      newErrors.identifier = 'Email or phone number is required';
-    } else {
-      // Basic email validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      const phoneRegex = /^\+?[\d\s-()]+$/;
-      
-      if (!emailRegex.test(identifier) && !phoneRegex.test(identifier)) {
-        newErrors.identifier = 'Please enter a valid email or phone number';
-      }
+  const handleNumberPress = (number) => {
+    if (phoneNumber.length < 10) {
+      setPhoneNumber(prev => prev + number);
     }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
   };
 
-  const handleLogin = async () => {
-    if (!validateInput()) return;
+  const handleBackspace = () => {
+    setPhoneNumber(prev => prev.slice(0, -1));
+  };
+
+  const formatPhoneNumber = (number) => {
+    if (number.length === 0) return '';
+    if (number.length <= 3) return number;
+    if (number.length <= 6) return `${number.slice(0, 3)} ${number.slice(3)}`;
+    return `${number.slice(0, 3)} ${number.slice(3, 6)} ${number.slice(6)}`;
+  };
+
+  const handleGetOTP = async () => {
+    if (phoneNumber.length !== 10) {
+      Alert.alert('Error', 'Please enter a valid 10-digit phone number');
+      return;
+    }
 
     setIsLoading(true);
     try {
-      const response = await authService.login(identifier);
+      const fullPhoneNumber = `+91 ${formatPhoneNumber(phoneNumber)}`;
+      console.log('📱 Starting login with phone:', fullPhoneNumber);
+      
+      const response = await authService.login(fullPhoneNumber);
       
       if (response.success) {
-        navigation.navigate('OTP', { identifier });
+        console.log('✅ OTP sent, navigating to verification');
+        navigation.navigate('OTP', { 
+          identifier: fullPhoneNumber,
+          preSelectedRole 
+        });
       } else {
-        Alert.alert('Error', response.message || 'Login failed');
+        Alert.alert('Error', response.message || 'Failed to send OTP');
       }
     } catch (error) {
+      console.error('❌ Login error:', error);
       Alert.alert('Error', 'Something went wrong. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
+  const NumberButton = ({ number, letters }) => (
+    <TouchableOpacity
+      onPress={() => handleNumberPress(number)}
+      className="flex-1 justify-center items-center py-4 mx-1"
+      activeOpacity={0.7}
+    >
+      <Text className="text-3xl font-normal text-gray-900">{number}</Text>
+      {letters && (
+        <Text className="text-xs text-gray-500 mt-1 tracking-widest">{letters}</Text>
+      )}
+    </TouchableOpacity>
+  );
+
   return (
     <SafeAreaView className="flex-1 bg-white">
-      <KeyboardAvoidingView 
-        className="flex-1" 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <View className="flex-1 px-6 justify-center">
-          {/* Header */}
-          <View className="items-center mb-12">
-            <View className="w-20 h-20 bg-primary rounded-full justify-center items-center mb-4">
-              <Text className="text-white text-2xl font-bold">I</Text>
+      {/* Header */}
+      <View className="flex-row items-center px-4 py-3">
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color="#000" />
+        </TouchableOpacity>
+        <Text 
+          style={{ 
+            fontSize: 20, 
+            fontWeight: 'bold', 
+            color: '#FF6B7A',
+            marginLeft: 16
+          }}
+        >
+          Inflo
+        </Text>
+      </View>
+
+      <View className="flex-1 px-6">
+        {/* Title */}
+        <View className="mt-8 mb-12">
+          <Text className="text-2xl font-bold text-gray-900 mb-2">
+            Enter your phone number
+          </Text>
+          <Text className="text-gray-600">
+            We'll send you a one time password
+          </Text>
+        </View>
+
+        {/* Phone Number Display */}
+        <View className="mb-8">
+          <View className="flex-row items-center border-b border-gray-300 pb-2">
+            <View className="flex-row items-center mr-4">
+              <Text className="text-lg text-gray-900">🇮🇳</Text>
+              <Text className="text-lg text-gray-900 ml-2">+91</Text>
             </View>
-            <Text className="text-3xl font-bold text-gray-900 mb-2">Welcome to Inflo</Text>
-            <Text className="text-gray-600 text-center">
-              Enter your email or phone number to get started
+            <Text className="text-2xl text-gray-900 flex-1">
+              {formatPhoneNumber(phoneNumber) || ''}
             </Text>
-          </View>
-
-          {/* Login Form */}
-          <View className="mb-8">
-            <InputField
-              label="Email or Phone Number"
-              placeholder="Enter your email or phone"
-              value={identifier}
-              onChangeText={setIdentifier}
-              error={errors.identifier}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              leftIcon="mail"
-            />
-
-            <Button
-              title="Send OTP"
-              onPress={handleLogin}
-              loading={isLoading}
-              disabled={!identifier.trim()}
-              size="large"
-            />
-          </View>
-
-          {/* Demo Info */}
-          <View className="bg-blue-50 p-4 rounded-lg mb-6">
-            <Text className="text-blue-800 font-medium mb-2">Demo Mode</Text>
-            <Text className="text-blue-600 text-sm">
-              Use any email and OTP: 123456 to login
-            </Text>
-          </View>
-
-          {/* Footer */}
-          <View className="items-center">
-            <Text className="text-gray-500 text-sm text-center">
-              By continuing, you agree to our Terms of Service and Privacy Policy
-            </Text>
+            {phoneNumber.length > 0 && (
+              <TouchableOpacity onPress={handleBackspace}>
+                <Ionicons name="backspace-outline" size={24} color="#666" />
+              </TouchableOpacity>
+            )}
           </View>
         </View>
-      </KeyboardAvoidingView>
+
+        {/* Number Pad */}
+        <View className="flex-1 justify-center">
+          {/* Row 1 */}
+          <View className="flex-row mb-4">
+            <NumberButton number="1" />
+            <NumberButton number="2" letters="ABC" />
+            <NumberButton number="3" letters="DEF" />
+          </View>
+
+          {/* Row 2 */}
+          <View className="flex-row mb-4">
+            <NumberButton number="4" letters="GHI" />
+            <NumberButton number="5" letters="JKL" />
+            <NumberButton number="6" letters="MNO" />
+          </View>
+
+          {/* Row 3 */}
+          <View className="flex-row mb-4">
+            <NumberButton number="7" letters="PQRS" />
+            <NumberButton number="8" letters="TUV" />
+            <NumberButton number="9" letters="WXYZ" />
+          </View>
+
+          {/* Row 4 */}
+          <View className="flex-row mb-8">
+            <View className="flex-1" />
+            <NumberButton number="0" />
+            <View className="flex-1" />
+          </View>
+        </View>
+
+        {/* Get OTP Button */}
+        <View className="mb-8">
+          <TouchableOpacity
+            onPress={handleGetOTP}
+            disabled={phoneNumber.length !== 10 || isLoading}
+            style={{
+              backgroundColor: phoneNumber.length === 10 ? '#FF6B7A' : '#E5E7EB',
+              paddingVertical: 16,
+              borderRadius: 8,
+              opacity: isLoading ? 0.7 : 1
+            }}
+            activeOpacity={0.8}
+          >
+            <Text 
+              style={{
+                color: phoneNumber.length === 10 ? 'white' : '#9CA3AF',
+                fontSize: 16,
+                fontWeight: '600',
+                textAlign: 'center'
+              }}
+            >
+              {isLoading ? 'Sending...' : 'Get OTP'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Role indicator */}
+        {preSelectedRole && (
+          <View className="items-center mb-4">
+            <Text style={{ color: '#FF6B7A', fontSize: 14 }}>
+              Signing up as {preSelectedRole === 'creator' ? 'Creator' : 'Brand'}
+            </Text>
+          </View>
+        )}
+      </View>
     </SafeAreaView>
   );
 } 
